@@ -15,9 +15,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
 const crypto_1 = require("./util/crypto");
 const endpoints_1 = __importDefault(require("./util/endpoints"));
+const branches_1 = __importDefault(require("./util/branches"));
 class DatahubAgent {
     get isSessionHometaxCreated() { return this._sessionHometax !== undefined; }
     get isSessionKcomwelCreated() { return this._sessionKcomwel !== undefined; }
+    get allBranches() { return branches_1.default; }
     constructor(isTest, token, key, iv) {
         this.encrypt = (data) => this._crypto.encrypt(data);
         const baseURL = isTest ? 'https://datahub-dev.scraping.co.kr' : 'https://api.mydatahub.co.kr';
@@ -54,7 +56,7 @@ class DatahubAgent {
             return res;
         });
     }
-    hometaxLoginSession(USERGUBUN, // 1: 개인, 2: 개인사업자
+    hometaxLoginSession(USERGUBUN, // 1: 개인, 2: 개인사업자,  3:법인, 4:세무사
     P_CERTNAME, P_CERTPWD, P_SIGNCERT_DER, P_SIGNPRI_KEY) {
         return __awaiter(this, void 0, void 0, function* () {
             const data = {
@@ -67,7 +69,7 @@ class DatahubAgent {
             data.P_CERTPWD = this.encrypt(data.P_CERTPWD);
             const res = yield this.post(endpoints_1.default.LoginSessionHomeTax, data);
             this._sessionHometax = res.data;
-            console.log('[ * ] Hometax Login Session has been created.');
+            console.log('[ * ] Hometax Login Session has been created. [인증서]');
             return res;
         });
     }
@@ -92,7 +94,7 @@ class DatahubAgent {
     kcomwelLoginSessionSimpleCaptcha(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const res = yield this.post(endpoints_1.default.Captcha, data.data);
-            this._sessionHometax = res.data;
+            this._sessionKcomwel = res.data;
             console.log('[ * ] Kcomwel Login Session has been created. [간편로그인]');
             return res;
         });
@@ -163,6 +165,61 @@ class DatahubAgent {
         });
     }
     // Kcomwel API
+    kcomwelEmploymentInfoSession(USERNAME, ADMINNO, BIRTHDAY) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.isSessionKcomwelCreated)
+                throw new Error('[ - ] Kcomwel Login Session is not created.');
+            const data = Object.assign({ USERNAME,
+                ADMINNO,
+                BIRTHDAY, OUTPUTDOCU: [{ OUTPUTDOCUTYPE: 'EXCEL' }] }, this._sessionKcomwel);
+            data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
+            return this.post(endpoints_1.default.EmploymentInfoSession, data);
+        });
+    }
+    kcomwelReportedCompensationSession(USERNAME, ADMINNO, SEARCHYEAR, BIRTHDAY) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.isSessionKcomwelCreated)
+                throw new Error('[ - ] Kcomwel Login Session is not created.');
+            const data = Object.assign({ USERNAME,
+                ADMINNO,
+                SEARCHYEAR,
+                BIRTHDAY, OUTPUTDOCU: [{ OUTPUTDOCUTYPE: 'EXCEL' }] }, this._sessionKcomwel);
+            data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
+            return this.post(endpoints_1.default.ReportedCompensationSession, data);
+        });
+    }
+    kcomwelChargeableInsuranceInquirySession(USERNAME, SUBCUSKIND, STARTDATE, ENDDATE, BIRTHDAY) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.isSessionKcomwelCreated)
+                throw new Error('[ - ] Kcomwel Login Session is not created.');
+            const data = Object.assign({ USERNAME,
+                SUBCUSKIND,
+                STARTDATE,
+                ENDDATE,
+                BIRTHDAY }, this._sessionKcomwel);
+            data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
+            return this.post(endpoints_1.default.ChargeableInsuranceInquirySession, data);
+        });
+    }
+    // TypeScript syntax를 사용하는 방법
+    /**
+     * INSUGUBUN: 1: 개인, 2: 개인사업자, 3: 법인, 4: 세무사
+     * REGNUMBER: 주민번호
+     * BRANCHNAME: 사업장명
+     * BRANCHCODE: 사업장코드
+     */
+    kcomwelSearchAdminno(INSUGUBUN, REGNUMBER, BRANCHNAME, BRANCHCODE) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const data = {
+                INSUGUBUN,
+                REGNUMBER,
+                BRANCHNAME,
+                BRANCHCODE,
+            };
+            data.REGNUMBER = this.encrypt(data.REGNUMBER);
+            return this.post(endpoints_1.default.SearchAdminno, data);
+        });
+    }
     // HTTP REQUEST
     get(endpoint, config) {
         return __awaiter(this, void 0, void 0, function* () {
