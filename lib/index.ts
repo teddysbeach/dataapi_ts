@@ -14,6 +14,7 @@ import { EmploymentInfoSessionResponseData } from './types/kcomwel/EmploymentInf
 import { ReportedCompensationSessionResponse } from './types/kcomwel/ReportedCompensationSession';
 import { ChargeableInsuranceInquirySessionResponse } from './types/kcomwel/ChargeableInsuranceInquirySession';
 import { SearchAdminnoResponse } from './types/kcomwel/SearchAdminno';
+import BRANCHES from './util/branches';
 
 export default class DatahubAgent {
     private _axiosInstance: AxiosInstance;  // axios 인스턴스
@@ -25,6 +26,7 @@ export default class DatahubAgent {
 
     get isSessionHometaxCreated(): boolean { return this._sessionHometax !== undefined; }
     get isSessionKcomwelCreated(): boolean { return this._sessionKcomwel !== undefined; }
+    get allBranches(): any[] { return BRANCHES; }
 
     constructor(isTest: boolean, token: string, key: string, iv: string) {
         const baseURL = isTest ? 'https://datahub-dev.scraping.co.kr' : 'https://api.mydatahub.co.kr';
@@ -72,7 +74,7 @@ export default class DatahubAgent {
     }
 
     public async hometaxLoginSession(
-      USERGUBUN: string, // 1: 개인, 2: 개인사업자
+      USERGUBUN: string, // 1: 개인, 2: 개인사업자,  3:법인, 4:세무사
       P_CERTNAME: string,
       P_CERTPWD: string,
       P_SIGNCERT_DER: string,
@@ -89,7 +91,7 @@ export default class DatahubAgent {
       data.P_CERTPWD = this.encrypt(data.P_CERTPWD);
       const res = await this.post<LoginSessionHomeTaxResponse>(endpoints.LoginSessionHomeTax, data);
       this._sessionHometax = res.data;
-      console.log('[ * ] Hometax Login Session has been created.');
+      console.log('[ * ] Hometax Login Session has been created. [인증서]');
       return res
     }
 
@@ -307,8 +309,8 @@ export default class DatahubAgent {
       return this.post<SearchAdminnoResponse>(endpoints.SearchAdminno, data);
     }
 
-    // HTTP REQUEST
 
+    // HTTP REQUEST
     private async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
       return this.sendRequest<T>(endpoint, 'GET', undefined, config);
     }
