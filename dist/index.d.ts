@@ -9,6 +9,8 @@ import { EmploymentInfoSessionResponseData } from './types/kcomwel/EmploymentInf
 import { ReportedCompensationSessionResponse } from './types/kcomwel/ReportedCompensationSession';
 import { ChargeableInsuranceInquirySessionResponse } from './types/kcomwel/ChargeableInsuranceInquirySession';
 import { SearchAdminnoResponse } from './types/kcomwel/SearchAdminno';
+import { BusinessInfoInquirySessionResponse } from './types/kcomwel/BusinessInfoInquirySession';
+import { ChargeableInsuranceInquiryToExcelResponseDataOutfile } from './types/kcomwel/ChargeableInsuranceInquirytoExcel';
 export default class DatahubAgent {
     private _axiosInstance;
     private _token;
@@ -86,6 +88,7 @@ export default class DatahubAgent {
      * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인 사업자, 4: 세무사
      * @param STARTDATE 조회시작일자 (yyyyMMdd)
      * @param ENDDATE 조회종료일자 (yyyyMMdd)
+     * @param TAXKIND 1:종합소득세, 2:원천세, 3:법인세, 4:부가가치세
      * @param HIDDENINFO 개인정보숨김처리, (Y:전부보임 | N:개인정보숨김)
      * @param SEARCHOPTION 조회옵션, 00: 전체 (빈 값일 경우 종합소득세 : 신고유형은 정기신고, 신고구분은 정기(확정))
      */
@@ -138,6 +141,12 @@ export default class DatahubAgent {
      */
     kcomwelReportedCompensationSession(USERNAME: string, ADMINNO: string, SEARCHYEAR: string, BIRTHDAY: string): Promise<ReportedCompensationSessionResponse>;
     /**
+     * 사업장정보조회 [BusinessInfoInquirySession]
+     * @param USERNAME 로그인용성명 (로그인세션 로그인 시 추출된 성명 또는 사업장명)
+     * @param BIRTHDAY 주민번호 또는 사업자번호
+     */
+    kcomwelBusinessInfoInquirySession(USERNAME: string, BIRTHDAY: string): Promise<BusinessInfoInquirySessionResponse>;
+    /**
      * 개인별 부과고지보험료 조회 [ChargeableInsuranceInquirySession]
      * @param USERNAME 성명
      * @param SUBCUSKIND 3: 일반근로자 (일반근로자만 조회 가능)
@@ -146,6 +155,15 @@ export default class DatahubAgent {
      * @param BIRTHDAY 주민번호또는사업자번호
      */
     kcomwelChargeableInsuranceInquirySession(USERNAME: string, SUBCUSKIND: string, STARTDATE: string, ENDDATE: string, BIRTHDAY: string): Promise<ChargeableInsuranceInquirySessionResponse>;
+    /**
+     * 개인별 부과고지보험료 조회 후 엑셀로 변환하여 전달 [ChargeableInsuranceInquirySession] :: Experimental
+     * @param USERNAME 성명
+     * @param SUBCUSKIND 3: 일반근로자 (일반근로자만 조회 가능)
+     * @param STARTDATE 조회시작년도 (YYYY)
+     * @param ENDDATE 조회종료년도 (YYYY)
+     * @param BIRTHDAY 주민번호또는사업자번호
+     */
+    kcomwelChargeableInsuranceInquiryToExcel(USERNAME: string, SUBCUSKIND: string, STARTDATE: string, ENDDATE: string, BIRTHDAY: string): Promise<ChargeableInsuranceInquiryToExcelResponseDataOutfile[]>;
     kcomwelSearchAdminno(INSUGUBUN: string, REGNUMBER: string, BRANCHNAME: string, BRANCHCODE: string): Promise<SearchAdminnoResponse>;
     private get;
     private post;

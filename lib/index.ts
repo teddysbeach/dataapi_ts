@@ -1,3 +1,4 @@
+
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { DataAPICrypto } from './util/crypto';
 import endpoints from './util/endpoints';
@@ -15,6 +16,9 @@ import { ReportedCompensationSessionResponse } from './types/kcomwel/ReportedCom
 import { ChargeableInsuranceInquirySessionResponse } from './types/kcomwel/ChargeableInsuranceInquirySession';
 import { SearchAdminnoResponse } from './types/kcomwel/SearchAdminno';
 import BRANCHES from './util/branches';
+import { BusinessInfoInquirySessionResponse } from './types/kcomwel/BusinessInfoInquirySession';
+import * as XLSX from 'xlsx';
+import { ChargeableInsuranceInquiryToExcelResponseDataOutfile } from './types/kcomwel/ChargeableInsuranceInquirytoExcel';
 
 export default class DatahubAgent {
     private _axiosInstance: AxiosInstance;  // axios 인스턴스
@@ -200,6 +204,7 @@ export default class DatahubAgent {
      * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인 사업자, 4: 세무사
      * @param STARTDATE 조회시작일자 (yyyyMMdd)
      * @param ENDDATE 조회종료일자 (yyyyMMdd)
+     * @param TAXKIND 1:종합소득세, 2:원천세, 3:법인세, 4:부가가치세
      * @param HIDDENINFO 개인정보숨김처리, (Y:전부보임 | N:개인정보숨김)
      * @param SEARCHOPTION 조회옵션, 00: 전체 (빈 값일 경우 종합소득세 : 신고유형은 정기신고, 신고구분은 정기(확정))
      */
@@ -396,7 +401,7 @@ export default class DatahubAgent {
     public async kcomwelBusinessInfoInquirySession(
       USERNAME: string,
       BIRTHDAY: string,
-    ){
+    ): Promise<BusinessInfoInquirySessionResponse> {
       if(!this.isSessionKcomwelCreated) throw new Error('[ - ] Kcomwel Login Session is not created.')
       const data = {
         USERNAME,
@@ -435,6 +440,77 @@ export default class DatahubAgent {
 
       data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
       return this.post<ChargeableInsuranceInquirySessionResponse>(endpoints.ChargeableInsuranceInquirySession, data);
+    }
+
+    /**
+     * 개인별 부과고지보험료 조회 후 엑셀로 변환하여 전달 [ChargeableInsuranceInquirySession] :: Experimental
+     * @param USERNAME 성명
+     * @param SUBCUSKIND 3: 일반근로자 (일반근로자만 조회 가능)
+     * @param STARTDATE 조회시작년도 (YYYY)
+     * @param ENDDATE 조회종료년도 (YYYY)
+     * @param BIRTHDAY 주민번호또는사업자번호
+     */
+    public async kcomwelChargeableInsuranceInquiryToExcel(
+      USERNAME: string,
+      SUBCUSKIND: string,
+      STARTDATE: string,
+      ENDDATE: string,
+      BIRTHDAY: string,
+    ): Promise<ChargeableInsuranceInquiryToExcelResponseDataOutfile[]> {
+      if(!this.isSessionKcomwelCreated) throw new Error('[ - ] Kcomwel Login Session is not created.')
+      const data = {
+        USERNAME,
+        SUBCUSKIND,
+        STARTDATE,
+        ENDDATE,
+        BIRTHDAY,
+        ...this._sessionKcomwel,
+      }
+
+      data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
+      const res = await this.post<ChargeableInsuranceInquirySessionResponse>(endpoints.ChargeableInsuranceInquirySession, data);
+      if(res.result === 'SUCCESS' && res.data.RESULT === 'SUCCESS'){
+        return res.data.NTCINSPRMLIST.map((item) => {
+          let OUTTEMP: any = {};
+          OUTTEMP['회사명'] = item.SAEOPJANGINFO.HOISAMYUNG;
+          OUTTEMP['회사주소'] = item.SAEOPJANGINFO.JUSO;
+          OUTTEMP['사업자등록번호'] = item.REGNUM;
+          OUTTEMP['사업장관리번호'] = item.SAEOPJANGINFO.ADMINNO;
+          OUTTEMP['대표자명'] = item.SAEOPJANGINFO.PRENAME;
+          OUTTEMP['성명'] = item.GEUNROJAINFO.USERNAME;
+          OUTTEMP['근로자생년월일'] = item.GEUNROJAINFO.BIRTHDAY;
+          OUTTEMP['근로자구분'] = item.GEUNROJAINFO.GEUNROJAGUBUN;
+          OUTTEMP['산재보험 고용일'] = item.GEUNROJAINFO.SJBJAGYEOKCHWIDEUKDT;
+          OUTTEMP['산재보험 고용종료일'] = item.GEUNROJAINFO.SJBJAGYEOKSANGSILDT;
+          OUTTEMP['산재보험 전근일'] = item.GEUNROJAINFO.SJBJEONGEUNDT;
+          OUTTEMP['고용보험 취득일'] = item.GEUNROJAINFO.GYBJAGYEOKCHWIDEUKDT;
+          OUTTEMP['고용보험 상실일'] = item.GEUNROJAINFO.GYBJAGYEOKSANGSILDT;
+          OUTTEMP['고용보험 전근일'] = item.GEUNROJAINFO.GYBJEONGEUNDT;
+          item.GEUNROJANTCINSPRMINFO.GYINFOLIST.map((item2, idx) => {
+            OUTTEMP[`${idx+1}-보험월`] = item2.INSMNTHL;
+            OUTTEMP[`${idx+1}-(실급)산정보수액`] = item2.SANJENGSGBOSUAK;
+            OUTTEMP[`${idx+1}-(고직)산정보수액`] = item2.SANJENGGAJNBOSUAK;
+            OUTTEMP[`${idx+1}-월평균보수 고용`] = item2.GYMMAVGBOSUPRC;
+            OUTTEMP[`${idx+1}-근무일수`] = item2.GEUNMUILSU;
+            OUTTEMP[`${idx+1}-(실급)근로자보험료`] = item2.SGGEUNROJABUDAMBHR;
+            OUTTEMP[`${idx+1}-(실급)사업주보험료`] = item2.SGSAEOPJABUDAMBHR;
+            OUTTEMP[`${idx+1}-(고직)사업주보험료`] = item2.GAJNBHR;
+          })
+
+          // OUTTEMP TO BASE64 EXCEL FILE
+          let wb = XLSX.utils.book_new();
+          let ws = XLSX.utils.json_to_sheet([OUTTEMP]);
+          XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+          let buf = XLSX.write(wb, {bookType: 'xlsx', type: 'buffer'});
+          let base64Encoded = buf.toString('base64');
+
+          return {
+            OUTTYPE: 'EXCEL',
+            OUTDATA: base64Encoded
+          }
+        })
+      }
+      return [];
     }
 
     public async kcomwelSearchAdminno(

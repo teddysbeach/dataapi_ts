@@ -9,6 +9,7 @@ declare const endpoints: {
     EmploymentInfoSession: string;
     LoginSessionSimpleKcomwel: string;
     LoginSessionKcomwel: string;
+    BusinessInfoInquirySession: string;
     ReportedCompensationSession: string;
     ChargeableInsuranceInquirySession: string;
     SearchAdminno: string;

@@ -13,6 +13,7 @@ const endpoints = {
     EmploymentInfoSession: '/scrap/corpTax/kcomwel/EmploymentInfoSession',
     LoginSessionSimpleKcomwel: '/scrap/corpTax/kcomwel/LoginSessionSimple',
     LoginSessionKcomwel: '/scrap/corpTax/kcomwel/LoginSession',
+    BusinessInfoInquirySession: '/scrap/corpTax/kcomwel/BusinessInfoInquirySession',
     ReportedCompensationSession: '/scrap/corpTax/kcomwel/ReportedCompensationSession',
     ChargeableInsuranceInquirySession: '/scrap/corpTax/kcomwel/ChargeableInsuranceInquirySession',
     SearchAdminno: '/scrap/corpTax/kcomwel/SearchAdminno',
