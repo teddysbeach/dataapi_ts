@@ -450,68 +450,68 @@ export default class DatahubAgent {
      * @param ENDDATE 조회종료년도 (YYYY)
      * @param BIRTHDAY 주민번호또는사업자번호
      */
-    public async kcomwelChargeableInsuranceInquiryToExcel(
-      USERNAME: string,
-      SUBCUSKIND: string,
-      STARTDATE: string,
-      ENDDATE: string,
-      BIRTHDAY: string,
-    ): Promise<ChargeableInsuranceInquiryToExcelResponseDataOutfile[]> {
-      if(!this.isSessionKcomwelCreated) throw new Error('[ - ] Kcomwel Login Session is not created.')
-      const data = {
-        USERNAME,
-        SUBCUSKIND,
-        STARTDATE,
-        ENDDATE,
-        BIRTHDAY,
-        ...this._sessionKcomwel,
-      }
+    // public async kcomwelChargeableInsuranceInquiryToExcel(
+    //   USERNAME: string,
+    //   SUBCUSKIND: string,
+    //   STARTDATE: string,
+    //   ENDDATE: string,
+    //   BIRTHDAY: string,
+    // ): Promise<ChargeableInsuranceInquiryToExcelResponseDataOutfile[]> {
+    //   if(!this.isSessionKcomwelCreated) throw new Error('[ - ] Kcomwel Login Session is not created.')
+    //   const data = {
+    //     USERNAME,
+    //     SUBCUSKIND,
+    //     STARTDATE,
+    //     ENDDATE,
+    //     BIRTHDAY,
+    //     ...this._sessionKcomwel,
+    //   }
 
-      data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
-      const res = await this.post<ChargeableInsuranceInquirySessionResponse>(endpoints.ChargeableInsuranceInquirySession, data);
-      if(res.result === 'SUCCESS' && res.data.RESULT === 'SUCCESS'){
-        return res.data.NTCINSPRMLIST.map((item) => {
-          let OUTTEMP: any = {};
-          OUTTEMP['회사명'] = item.SAEOPJANGINFO.HOISAMYUNG;
-          OUTTEMP['회사주소'] = item.SAEOPJANGINFO.JUSO;
-          OUTTEMP['사업자등록번호'] = item.REGNUM;
-          OUTTEMP['사업장관리번호'] = item.SAEOPJANGINFO.ADMINNO;
-          OUTTEMP['대표자명'] = item.SAEOPJANGINFO.PRENAME;
-          OUTTEMP['성명'] = item.GEUNROJAINFO.USERNAME;
-          OUTTEMP['근로자생년월일'] = item.GEUNROJAINFO.BIRTHDAY;
-          OUTTEMP['근로자구분'] = item.GEUNROJAINFO.GEUNROJAGUBUN;
-          OUTTEMP['산재보험 고용일'] = item.GEUNROJAINFO.SJBJAGYEOKCHWIDEUKDT;
-          OUTTEMP['산재보험 고용종료일'] = item.GEUNROJAINFO.SJBJAGYEOKSANGSILDT;
-          OUTTEMP['산재보험 전근일'] = item.GEUNROJAINFO.SJBJEONGEUNDT;
-          OUTTEMP['고용보험 취득일'] = item.GEUNROJAINFO.GYBJAGYEOKCHWIDEUKDT;
-          OUTTEMP['고용보험 상실일'] = item.GEUNROJAINFO.GYBJAGYEOKSANGSILDT;
-          OUTTEMP['고용보험 전근일'] = item.GEUNROJAINFO.GYBJEONGEUNDT;
-          item.GEUNROJANTCINSPRMINFO.GYINFOLIST.map((item2, idx) => {
-            OUTTEMP[`${idx+1}-보험월`] = item2.INSMNTHL;
-            OUTTEMP[`${idx+1}-(실급)산정보수액`] = item2.SANJENGSGBOSUAK;
-            OUTTEMP[`${idx+1}-(고직)산정보수액`] = item2.SANJENGGAJNBOSUAK;
-            OUTTEMP[`${idx+1}-월평균보수 고용`] = item2.GYMMAVGBOSUPRC;
-            OUTTEMP[`${idx+1}-근무일수`] = item2.GEUNMUILSU;
-            OUTTEMP[`${idx+1}-(실급)근로자보험료`] = item2.SGGEUNROJABUDAMBHR;
-            OUTTEMP[`${idx+1}-(실급)사업주보험료`] = item2.SGSAEOPJABUDAMBHR;
-            OUTTEMP[`${idx+1}-(고직)사업주보험료`] = item2.GAJNBHR;
-          })
+    //   data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
+    //   const res = await this.post<ChargeableInsuranceInquirySessionResponse>(endpoints.ChargeableInsuranceInquirySession, data);
+    //   if(res.result === 'SUCCESS' && res.data.RESULT === 'SUCCESS'){
+    //     return res.data.NTCINSPRMLIST.map((item) => {
+    //       let OUTTEMP: any = {};
+    //       OUTTEMP['회사명'] = item.SAEOPJANGINFO.HOISAMYUNG;
+    //       OUTTEMP['회사주소'] = item.SAEOPJANGINFO.JUSO;
+    //       OUTTEMP['사업자등록번호'] = item.REGNUM;
+    //       OUTTEMP['사업장관리번호'] = item.SAEOPJANGINFO.ADMINNO;
+    //       OUTTEMP['대표자명'] = item.SAEOPJANGINFO.PRENAME;
+    //       OUTTEMP['성명'] = item.GEUNROJAINFO.USERNAME;
+    //       OUTTEMP['근로자생년월일'] = item.GEUNROJAINFO.BIRTHDAY;
+    //       OUTTEMP['근로자구분'] = item.GEUNROJAINFO.GEUNROJAGUBUN;
+    //       OUTTEMP['산재보험 고용일'] = item.GEUNROJAINFO.SJBJAGYEOKCHWIDEUKDT;
+    //       OUTTEMP['산재보험 고용종료일'] = item.GEUNROJAINFO.SJBJAGYEOKSANGSILDT;
+    //       OUTTEMP['산재보험 전근일'] = item.GEUNROJAINFO.SJBJEONGEUNDT;
+    //       OUTTEMP['고용보험 취득일'] = item.GEUNROJAINFO.GYBJAGYEOKCHWIDEUKDT;
+    //       OUTTEMP['고용보험 상실일'] = item.GEUNROJAINFO.GYBJAGYEOKSANGSILDT;
+    //       OUTTEMP['고용보험 전근일'] = item.GEUNROJAINFO.GYBJEONGEUNDT;
+    //       item.GEUNROJANTCINSPRMINFO.GYINFOLIST.map((item2, idx) => {
+    //         OUTTEMP[`${idx+1}-보험월`] = item2.INSMNTHL;
+    //         OUTTEMP[`${idx+1}-(실급)산정보수액`] = item2.SANJENGSGBOSUAK;
+    //         OUTTEMP[`${idx+1}-(고직)산정보수액`] = item2.SANJENGGAJNBOSUAK;
+    //         OUTTEMP[`${idx+1}-월평균보수 고용`] = item2.GYMMAVGBOSUPRC;
+    //         OUTTEMP[`${idx+1}-근무일수`] = item2.GEUNMUILSU;
+    //         OUTTEMP[`${idx+1}-(실급)근로자보험료`] = item2.SGGEUNROJABUDAMBHR;
+    //         OUTTEMP[`${idx+1}-(실급)사업주보험료`] = item2.SGSAEOPJABUDAMBHR;
+    //         OUTTEMP[`${idx+1}-(고직)사업주보험료`] = item2.GAJNBHR;
+    //       })
 
-          // OUTTEMP TO BASE64 EXCEL FILE
-          let wb = XLSX.utils.book_new();
-          let ws = XLSX.utils.json_to_sheet([OUTTEMP]);
-          XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-          let buf = XLSX.write(wb, {bookType: 'xlsx', type: 'buffer'});
-          let base64Encoded = buf.toString('base64');
+    //       // OUTTEMP TO BASE64 EXCEL FILE
+    //       let wb = XLSX.utils.book_new();
+    //       let ws = XLSX.utils.json_to_sheet([OUTTEMP]);
+    //       XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    //       let buf = XLSX.write(wb, {bookType: 'xlsx', type: 'buffer'});
+    //       let base64Encoded = buf.toString('base64');
 
-          return {
-            OUTTYPE: 'EXCEL',
-            OUTDATA: base64Encoded
-          }
-        })
-      }
-      return [];
-    }
+    //       return {
+    //         OUTTYPE: 'EXCEL',
+    //         OUTDATA: base64Encoded
+    //       }
+    //     })
+    //   }
+    //   return [];
+    // }
 
     public async kcomwelSearchAdminno(
       INSUGUBUN: string,
