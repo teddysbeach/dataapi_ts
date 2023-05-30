@@ -13,6 +13,7 @@ const endpoints = {
     EmploymentInfoSession:              '/scrap/corpTax/kcomwel/EmploymentInfoSession',                     // 고용정보 근로자고용정보현황(로그인세션)
     LoginSessionSimpleKcomwel:          '/scrap/corpTax/kcomwel/LoginSessionSimple',                        // 고용정보 로그인세션 추출(간편인증)
     LoginSessionKcomwel:                '/scrap/corpTax/kcomwel/LoginSession',                              // 고용정보 로그인세션 추출(인증서로그인)
+    BusinessInfoInquirySession:         '/scrap/corpTax/kcomwel/BusinessInfoInquirySession',                // 고용정보 사업장정보조회(로그인세션)
     ReportedCompensationSession:        '/scrap/corpTax/kcomwel/ReportedCompensationSession',               // 고용정보 보수총액신고내역(로그인세션)
     ChargeableInsuranceInquirySession:  '/scrap/corpTax/kcomwel/ChargeableInsuranceInquirySession',         // 고용정보 개인별 부과고지보험료 조회(로그인세션)
     SearchAdminno:                      '/scrap/corpTax/kcomwel/SearchAdminno',                             // 고용정보 사업자등록번호조회

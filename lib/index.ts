@@ -194,7 +194,6 @@ export default class DatahubAgent {
       return res
     }
     
-
     /**
      * 세금신고결과 전체조회 [TaxReturnResultTotalSession]
      * @param REGNUMBER 사업자등록번호, (-)제외 10자리
@@ -389,6 +388,25 @@ export default class DatahubAgent {
 
     }
 
+    /**
+     * 사업장정보조회 [BusinessInfoInquirySession]
+     * @param USERNAME 로그인용성명 (로그인세션 로그인 시 추출된 성명 또는 사업장명)
+     * @param BIRTHDAY 주민번호 또는 사업자번호
+     */
+    public async kcomwelBusinessInfoInquirySession(
+      USERNAME: string,
+      BIRTHDAY: string,
+    ){
+      if(!this.isSessionKcomwelCreated) throw new Error('[ - ] Kcomwel Login Session is not created.')
+      const data = {
+        USERNAME,
+        BIRTHDAY,
+        ...this._sessionKcomwel,
+      }
+
+      data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
+      return this.post(endpoints.BusinessInfoInquirySession, data);
+    }
 
     /**
      * 개인별 부과고지보험료 조회 [ChargeableInsuranceInquirySession]
