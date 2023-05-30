@@ -17,8 +17,6 @@ import { ChargeableInsuranceInquirySessionResponse } from './types/kcomwel/Charg
 import { SearchAdminnoResponse } from './types/kcomwel/SearchAdminno';
 import BRANCHES from './util/branches';
 import { BusinessInfoInquirySessionResponse } from './types/kcomwel/BusinessInfoInquirySession';
-import * as XLSX from 'xlsx';
-import { ChargeableInsuranceInquiryToExcelResponseDataOutfile } from './types/kcomwel/ChargeableInsuranceInquirytoExcel';
 
 export default class DatahubAgent {
     private _axiosInstance: AxiosInstance;  // axios 인스턴스
