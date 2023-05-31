@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const endpoints = {
     Captcha: '/scrap/captcha',
     // HomeTax
@@ -19,4 +17,4 @@ const endpoints = {
     SearchAdminno: '/scrap/corpTax/kcomwel/SearchAdminno',
     SearchAdminnoBranch: '/scrap/corpTax/kcomwel/SearchAdminnoBranch', // 고용정보 사업장관리번호 지사 목록 조회 
 };
-exports.default = endpoints;
+export default endpoints;

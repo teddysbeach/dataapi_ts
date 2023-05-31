@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const BRANCHES = [
     {
         "BRANCHNAME": "강릉지사",
@@ -374,4 +372,4 @@ const BRANCHES = [
         "BRANCHCODE": "5190"
     }
 ];
-exports.default = BRANCHES;
+export default BRANCHES;

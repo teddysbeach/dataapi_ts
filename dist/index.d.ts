@@ -163,7 +163,6 @@ export default class DatahubAgent {
      * @param ENDDATE 조회종료년도 (YYYY)
      * @param BIRTHDAY 주민번호또는사업자번호
      */
-    kcomwelChargeableInsuranceInquiryExcel(USERNAME: string, SUBCUSKIND: string, STARTDATE: string, ENDDATE: string, BIRTHDAY: string): Promise<any[]>;
     kcomwelSearchAdminno(INSUGUBUN: string, REGNUMBER: string, BRANCHNAME: string, BRANCHCODE: string): Promise<SearchAdminnoResponse>;
     private get;
     private post;
