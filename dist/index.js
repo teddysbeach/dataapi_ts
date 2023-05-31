@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -16,6 +39,7 @@ const axios_1 = __importDefault(require("axios"));
 const crypto_1 = require("./util/crypto");
 const endpoints_1 = __importDefault(require("./util/endpoints"));
 const branches_1 = __importDefault(require("./util/branches"));
+const XLSX = __importStar(require("xlsx"));
 class DatahubAgent {
     get isSessionHometaxCreated() { return this._sessionHometax !== undefined; }
     get isSessionKcomwelCreated() { return this._sessionKcomwel !== undefined; }
@@ -89,6 +113,8 @@ class DatahubAgent {
             };
             data.P_CERTPWD = this.encrypt(data.P_CERTPWD);
             const res = yield this.post(endpoints_1.default.LoginSessionHomeTax, data);
+            if (res.result === 'FAIL')
+                throw new Error(res.errMsg);
             this._sessionHometax = res.data;
             console.log('[ * ] Hometax Login Session has been created. [인증서]');
             return res;
@@ -212,8 +238,8 @@ class DatahubAgent {
     }
     /**
      * 사업자 수임동의 [AcceptOfAppoinmtSoleSession]
-     * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인사업자 (개인은신청불가능함.)
-     * @param REGNUMBER 사업자등록번호, (-)제외 10자리
+     * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인사업자
+     * @param REGNUMBER 사업자등록번호, (-)제외 10자리 (개인일경우 주민등록번호)
      */
     hometaxAcceptOfAppoinmtSoleSession(USERGUBUN, REGNUMBER) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -260,7 +286,6 @@ class DatahubAgent {
             return this.post(endpoints_1.default.TaxAccountantRetrieveRegSession, data);
         });
     }
-    // Kcomwel API
     /**
      * 근로자고용정보현황 [EmploymentInfoSession]
      * @param USERNAME 로그인용성명 (로그인세션 로그인 시 추출된 성명 또는 사업장명)
@@ -341,65 +366,113 @@ class DatahubAgent {
      * @param ENDDATE 조회종료년도 (YYYY)
      * @param BIRTHDAY 주민번호또는사업자번호
      */
-    // public async kcomwelChargeableInsuranceInquiryToExcel(
-    //   USERNAME: string,
-    //   SUBCUSKIND: string,
-    //   STARTDATE: string,
-    //   ENDDATE: string,
-    //   BIRTHDAY: string,
-    // ): Promise<ChargeableInsuranceInquiryToExcelResponseDataOutfile[]> {
-    //   if(!this.isSessionKcomwelCreated) throw new Error('[ - ] Kcomwel Login Session is not created.')
-    //   const data = {
-    //     USERNAME,
-    //     SUBCUSKIND,
-    //     STARTDATE,
-    //     ENDDATE,
-    //     BIRTHDAY,
-    //     ...this._sessionKcomwel,
-    //   }
-    //   data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
-    //   const res = await this.post<ChargeableInsuranceInquirySessionResponse>(endpoints.ChargeableInsuranceInquirySession, data);
-    //   if(res.result === 'SUCCESS' && res.data.RESULT === 'SUCCESS'){
-    //     return res.data.NTCINSPRMLIST.map((item) => {
-    //       let OUTTEMP: any = {};
-    //       OUTTEMP['회사명'] = item.SAEOPJANGINFO.HOISAMYUNG;
-    //       OUTTEMP['회사주소'] = item.SAEOPJANGINFO.JUSO;
-    //       OUTTEMP['사업자등록번호'] = item.REGNUM;
-    //       OUTTEMP['사업장관리번호'] = item.SAEOPJANGINFO.ADMINNO;
-    //       OUTTEMP['대표자명'] = item.SAEOPJANGINFO.PRENAME;
-    //       OUTTEMP['성명'] = item.GEUNROJAINFO.USERNAME;
-    //       OUTTEMP['근로자생년월일'] = item.GEUNROJAINFO.BIRTHDAY;
-    //       OUTTEMP['근로자구분'] = item.GEUNROJAINFO.GEUNROJAGUBUN;
-    //       OUTTEMP['산재보험 고용일'] = item.GEUNROJAINFO.SJBJAGYEOKCHWIDEUKDT;
-    //       OUTTEMP['산재보험 고용종료일'] = item.GEUNROJAINFO.SJBJAGYEOKSANGSILDT;
-    //       OUTTEMP['산재보험 전근일'] = item.GEUNROJAINFO.SJBJEONGEUNDT;
-    //       OUTTEMP['고용보험 취득일'] = item.GEUNROJAINFO.GYBJAGYEOKCHWIDEUKDT;
-    //       OUTTEMP['고용보험 상실일'] = item.GEUNROJAINFO.GYBJAGYEOKSANGSILDT;
-    //       OUTTEMP['고용보험 전근일'] = item.GEUNROJAINFO.GYBJEONGEUNDT;
-    //       item.GEUNROJANTCINSPRMINFO.GYINFOLIST.map((item2, idx) => {
-    //         OUTTEMP[`${idx+1}-보험월`] = item2.INSMNTHL;
-    //         OUTTEMP[`${idx+1}-(실급)산정보수액`] = item2.SANJENGSGBOSUAK;
-    //         OUTTEMP[`${idx+1}-(고직)산정보수액`] = item2.SANJENGGAJNBOSUAK;
-    //         OUTTEMP[`${idx+1}-월평균보수 고용`] = item2.GYMMAVGBOSUPRC;
-    //         OUTTEMP[`${idx+1}-근무일수`] = item2.GEUNMUILSU;
-    //         OUTTEMP[`${idx+1}-(실급)근로자보험료`] = item2.SGGEUNROJABUDAMBHR;
-    //         OUTTEMP[`${idx+1}-(실급)사업주보험료`] = item2.SGSAEOPJABUDAMBHR;
-    //         OUTTEMP[`${idx+1}-(고직)사업주보험료`] = item2.GAJNBHR;
-    //       })
-    //       // OUTTEMP TO BASE64 EXCEL FILE
-    //       let wb = XLSX.utils.book_new();
-    //       let ws = XLSX.utils.json_to_sheet([OUTTEMP]);
-    //       XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    //       let buf = XLSX.write(wb, {bookType: 'xlsx', type: 'buffer'});
-    //       let base64Encoded = buf.toString('base64');
-    //       return {
-    //         OUTTYPE: 'EXCEL',
-    //         OUTDATA: base64Encoded
-    //       }
-    //     })
-    //   }
-    //   return [];
-    // }
+    kcomwelChargeableInsuranceInquiryExcel(USERNAME, SUBCUSKIND, STARTDATE, ENDDATE, BIRTHDAY) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // if(!this.isSessionKcomwelCreated) throw new Error('[ - ] Kcomwel Login Session is not created.')
+            const data = Object.assign({ USERNAME,
+                SUBCUSKIND,
+                STARTDATE,
+                ENDDATE,
+                BIRTHDAY }, this._sessionKcomwel);
+            data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
+            // const res = await this.post<ChargeableInsuranceInquirySessionResponse>(endpoints.ChargeableInsuranceInquirySession, data);
+            const res = {
+                "errCode": "0000",
+                "errMsg": "success",
+                "result": "SUCCESS",
+                "data": {
+                    "ETRACK": "",
+                    "ERRMSG": "",
+                    "NTCINSPRMLIST": [{
+                            "SAEOPJANGINFO": {
+                                "HOISAMYUNG": "기웅정보통신(주)",
+                                "JUSO": "서울 금천구 가산디지털2로 982 (가산동)",
+                                "ADMINNO": "21481593940",
+                                "PRENAME": "홍길동"
+                            },
+                            "GEUNROJAINFO": {
+                                "SJBJAGYEOKCHWIDEUKDT": "20210101",
+                                "USERNAME": "홍길동",
+                                "SJBJAGYEOKSANGSILDT": "",
+                                "GEUNROJAGUBUN": "일반",
+                                "SJBJEONGEUNDT": "",
+                                "GYBJEONGEUNDT": "",
+                                "GYBJAGYEOKSANGSILDT": "",
+                                "BIRTHDAY": "990101",
+                                "GYBJAGYEOKCHWIDEUKDT": "20210101"
+                            },
+                            "INSYEAR": "2022",
+                            "REGNUM": "2148159394",
+                            "GEUNROJANTCINSPRMINFO": {
+                                "GYINFOLIST": [{
+                                        "GYMMAVGBOSUPRC": "5000000",
+                                        "GAJNBHR": "50000",
+                                        "SANJENGSGBOSUAK": "5000000",
+                                        "INSMNTHL": "1",
+                                        "SANJENGGAJNBOSUAK": "5000000",
+                                        "SGGEUNROJABUDAMBHR": "50000",
+                                        "GEUNMUILSU": "31",
+                                        "SGSAEOPJABUDAMBHR": "50000"
+                                    }, {
+                                        "GYMMAVGBOSUPRC": "5000000",
+                                        "GAJNBHR": "50000",
+                                        "SANJENGSGBOSUAK": "5000000",
+                                        "INSMNTHL": "2",
+                                        "SANJENGGAJNBOSUAK": "5000000",
+                                        "SGGEUNROJABUDAMBHR": "50000",
+                                        "GEUNMUILSU": "28",
+                                        "SGSAEOPJABUDAMBHR": "50000"
+                                    }]
+                            }
+                        }],
+                    "ECODE": "",
+                    "ERRDOC": "",
+                    "RESULT": "SUCCESS"
+                }
+            };
+            if (res.result === 'SUCCESS' && res.data.RESULT === 'SUCCESS') {
+                const items = res.data.NTCINSPRMLIST.map((item) => {
+                    let OUTTEMP = {};
+                    OUTTEMP['회사명'] = item.SAEOPJANGINFO.HOISAMYUNG;
+                    OUTTEMP['회사주소'] = item.SAEOPJANGINFO.JUSO;
+                    OUTTEMP['사업자등록번호'] = item.REGNUM;
+                    OUTTEMP['사업장관리번호'] = item.SAEOPJANGINFO.ADMINNO;
+                    OUTTEMP['대표자명'] = item.SAEOPJANGINFO.PRENAME;
+                    OUTTEMP['성명'] = item.GEUNROJAINFO.USERNAME;
+                    OUTTEMP['근로자생년월일'] = item.GEUNROJAINFO.BIRTHDAY;
+                    OUTTEMP['근로자구분'] = item.GEUNROJAINFO.GEUNROJAGUBUN;
+                    OUTTEMP['산재보험 고용일'] = item.GEUNROJAINFO.SJBJAGYEOKCHWIDEUKDT;
+                    OUTTEMP['산재보험 고용종료일'] = item.GEUNROJAINFO.SJBJAGYEOKSANGSILDT;
+                    OUTTEMP['산재보험 전근일'] = item.GEUNROJAINFO.SJBJEONGEUNDT;
+                    OUTTEMP['고용보험 취득일'] = item.GEUNROJAINFO.GYBJAGYEOKCHWIDEUKDT;
+                    OUTTEMP['고용보험 상실일'] = item.GEUNROJAINFO.GYBJAGYEOKSANGSILDT;
+                    OUTTEMP['고용보험 전근일'] = item.GEUNROJAINFO.GYBJEONGEUNDT;
+                    item.GEUNROJANTCINSPRMINFO.GYINFOLIST.map((item2, idx) => {
+                        OUTTEMP[`${idx + 1}-보험월`] = item2.INSMNTHL;
+                        OUTTEMP[`${idx + 1}-(실급)산정보수액`] = item2.SANJENGSGBOSUAK;
+                        OUTTEMP[`${idx + 1}-(고직)산정보수액`] = item2.SANJENGGAJNBOSUAK;
+                        OUTTEMP[`${idx + 1}-월평균보수 고용`] = item2.GYMMAVGBOSUPRC;
+                        OUTTEMP[`${idx + 1}-근무일수`] = item2.GEUNMUILSU;
+                        OUTTEMP[`${idx + 1}-(실급)근로자보험료`] = item2.SGGEUNROJABUDAMBHR;
+                        OUTTEMP[`${idx + 1}-(실급)사업주보험료`] = item2.SGSAEOPJABUDAMBHR;
+                        OUTTEMP[`${idx + 1}-(고직)사업주보험료`] = item2.GAJNBHR;
+                    });
+                    // OUTTEMP TO BASE64 EXCEL FILE
+                    let wb = XLSX.utils.book_new();
+                    let ws = XLSX.utils.json_to_sheet([OUTTEMP]);
+                    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                    let buf = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+                    let base64Encoded = buf.toString('base64');
+                    return {
+                        OUTTYPE: 'EXCEL',
+                        OUTDATA: base64Encoded
+                    };
+                });
+                return Object.assign(Object.assign({}, res), items);
+            }
+            return [];
+        });
+    }
     kcomwelSearchAdminno(INSUGUBUN, REGNUMBER, BRANCHNAME, BRANCHCODE) {
         return __awaiter(this, void 0, void 0, function* () {
             const data = {

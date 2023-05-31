@@ -102,8 +102,8 @@ export default class DatahubAgent {
     JUMINYN?: string, TELNUMBER?: string, HPNUMBER?: string, EMAIL?: string): Promise<BusinessLicenseSessionPDFResponseData>;
     /**
      * 사업자 수임동의 [AcceptOfAppoinmtSoleSession]
-     * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인사업자 (개인은신청불가능함.)
-     * @param REGNUMBER 사업자등록번호, (-)제외 10자리
+     * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인사업자
+     * @param REGNUMBER 사업자등록번호, (-)제외 10자리 (개인일경우 주민등록번호)
      */
     hometaxAcceptOfAppoinmtSoleSession(USERGUBUN: string, REGNUMBER?: string): Promise<AcceptOfAppoinmtSoleSessionResponse>;
     /**
@@ -162,6 +162,7 @@ export default class DatahubAgent {
      * @param ENDDATE 조회종료년도 (YYYY)
      * @param BIRTHDAY 주민번호또는사업자번호
      */
+    kcomwelChargeableInsuranceInquiryExcel(USERNAME: string, SUBCUSKIND: string, STARTDATE: string, ENDDATE: string, BIRTHDAY: string): Promise<any[]>;
     kcomwelSearchAdminno(INSUGUBUN: string, REGNUMBER: string, BRANCHNAME: string, BRANCHCODE: string): Promise<SearchAdminnoResponse>;
     private get;
     private post;

@@ -17,6 +17,7 @@ import { ChargeableInsuranceInquirySessionResponse } from './types/kcomwel/Charg
 import { SearchAdminnoResponse } from './types/kcomwel/SearchAdminno';
 import BRANCHES from './util/branches';
 import { BusinessInfoInquirySessionResponse } from './types/kcomwel/BusinessInfoInquirySession';
+import * as XLSX from 'xlsx';
 
 export default class DatahubAgent {
     private _axiosInstance: AxiosInstance;  // axios 인스턴스
@@ -115,6 +116,7 @@ export default class DatahubAgent {
 
       data.P_CERTPWD = this.encrypt(data.P_CERTPWD);
       const res = await this.post<LoginSessionHomeTaxResponse>(endpoints.LoginSessionHomeTax, data);
+      if(res.result === 'FAIL') throw new Error(res.errMsg)
       this._sessionHometax = res.data;
       console.log('[ * ] Hometax Login Session has been created. [인증서]');
       return res
@@ -151,7 +153,6 @@ export default class DatahubAgent {
       data.JUMINNUM = this.encrypt(data.JUMINNUM);
       return this.post<CaptchaResponse>(endpoints.LoginSessionSimpleKcomwel, data);
     }
-
     /**
      * 근로복지공단 간편인증 캡차확인 [kcomwel/Captcha]
      * 순서 : kcomwelLoginSessionSimple -> 사용자의 폰인증 완료후 -> kcomwelLoginSessionSimpleCaptcha -> 에이전트에 세션등록성공
@@ -163,7 +164,6 @@ export default class DatahubAgent {
       console.log('[ * ] Kcomwel Login Session has been created. [간편로그인]');
       return res;
     }
-
     /**
      * 공동인증서 근로고용복지공단 로그인 세션 [kcomwel/LoginSession] 
      * 확실하지 않고 테스트가 필요함 데이터허브측에 문의해서 존재하는 API인지 확인 필요
@@ -195,7 +195,6 @@ export default class DatahubAgent {
       console.log('[ * ] Kcomwel Login Session has been created. [인증서]');
       return res
     }
-    
     /**
      * 세금신고결과 전체조회 [TaxReturnResultTotalSession]
      * @param REGNUMBER 사업자등록번호, (-)제외 10자리
@@ -236,7 +235,6 @@ export default class DatahubAgent {
       data.TXAGNTMGMTPW = data.TXAGNTMGMTPW !== undefined ? this.encrypt(data.TXAGNTMGMTPW) : undefined;
       return this.post<TaxReturnResultTotalSessionResponse>(endpoints.TaxReturnResultTotalSession, data);
     }
-
     /**
      * 사업자등록증명원PDF [BusinessLicensePDFSession]
      * @param REGNUMBER 사업자등록번호, (-)제외 10자리
@@ -267,11 +265,10 @@ export default class DatahubAgent {
       data.REGNUMBER = this.encrypt(data.REGNUMBER);
       return this.post<BusinessLicenseSessionPDFResponseData>(endpoints.BusinessLicensePDFSession, data);
     }
-    
     /**
      * 사업자 수임동의 [AcceptOfAppoinmtSoleSession]
-     * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인사업자 (개인은신청불가능함.)
-     * @param REGNUMBER 사업자등록번호, (-)제외 10자리
+     * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인사업자
+     * @param REGNUMBER 사업자등록번호, (-)제외 10자리 (개인일경우 주민등록번호)
      */
     public async hometaxAcceptOfAppoinmtSoleSession(
       USERGUBUN: string,
@@ -287,7 +284,6 @@ export default class DatahubAgent {
       data.REGNUMBER = data.REGNUMBER !== undefined ? this.encrypt(data.REGNUMBER) : undefined;
       return this.post<AcceptOfAppoinmtSoleSessionResponse>(endpoints.AcceptOfAppoinmtSoleSession, data);
     }
-
     /**
      * 세무사 수임등록 [TaxAccountantRetrieveRegSession]
      * @param USERGUBUN 사용자구분, 4: 세무사
@@ -335,10 +331,6 @@ export default class DatahubAgent {
       return this.post<TaxAccountantRetrieveRegSessionResponse>(endpoints.TaxAccountantRetrieveRegSession, data);
 
     }
-
-    // Kcomwel API
-
-
     /**
      * 근로자고용정보현황 [EmploymentInfoSession]
      * @param USERNAME 로그인용성명 (로그인세션 로그인 시 추출된 성명 또는 사업장명)
@@ -362,7 +354,6 @@ export default class DatahubAgent {
       data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
       return this.post<EmploymentInfoSessionResponseData>(endpoints.EmploymentInfoSession, data);
     }
-
     /**
      * 보수총액신고내역 [ReportedCompensationSession]
      * @param USERNAME 로그인용성명 (로그인세션 로그인 시 추출된 성명 또는 사업장명)
@@ -390,7 +381,6 @@ export default class DatahubAgent {
       return this.post<ReportedCompensationSessionResponse>(endpoints.ReportedCompensationSession, data);
 
     }
-
     /**
      * 사업장정보조회 [BusinessInfoInquirySession]
      * @param USERNAME 로그인용성명 (로그인세션 로그인 시 추출된 성명 또는 사업장명)
@@ -410,7 +400,6 @@ export default class DatahubAgent {
       data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
       return this.post(endpoints.BusinessInfoInquirySession, data);
     }
-
     /**
      * 개인별 부과고지보험료 조회 [ChargeableInsuranceInquirySession]
      * @param USERNAME 성명
@@ -439,7 +428,6 @@ export default class DatahubAgent {
       data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
       return this.post<ChargeableInsuranceInquirySessionResponse>(endpoints.ChargeableInsuranceInquirySession, data);
     }
-
     /**
      * 개인별 부과고지보험료 조회 후 엑셀로 변환하여 전달 [ChargeableInsuranceInquirySession] :: Experimental
      * @param USERNAME 성명
@@ -448,68 +436,126 @@ export default class DatahubAgent {
      * @param ENDDATE 조회종료년도 (YYYY)
      * @param BIRTHDAY 주민번호또는사업자번호
      */
-    // public async kcomwelChargeableInsuranceInquiryToExcel(
-    //   USERNAME: string,
-    //   SUBCUSKIND: string,
-    //   STARTDATE: string,
-    //   ENDDATE: string,
-    //   BIRTHDAY: string,
-    // ): Promise<ChargeableInsuranceInquiryToExcelResponseDataOutfile[]> {
-    //   if(!this.isSessionKcomwelCreated) throw new Error('[ - ] Kcomwel Login Session is not created.')
-    //   const data = {
-    //     USERNAME,
-    //     SUBCUSKIND,
-    //     STARTDATE,
-    //     ENDDATE,
-    //     BIRTHDAY,
-    //     ...this._sessionKcomwel,
-    //   }
+    public async kcomwelChargeableInsuranceInquiryExcel(
+      USERNAME: string,
+      SUBCUSKIND: string,
+      STARTDATE: string,
+      ENDDATE: string,
+      BIRTHDAY: string,
+    ): Promise<any[]> {
+      // if(!this.isSessionKcomwelCreated) throw new Error('[ - ] Kcomwel Login Session is not created.')
+      const data = {
+        USERNAME,
+        SUBCUSKIND,
+        STARTDATE,
+        ENDDATE,
+        BIRTHDAY,
+        ...this._sessionKcomwel,
+      }
 
-    //   data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
-    //   const res = await this.post<ChargeableInsuranceInquirySessionResponse>(endpoints.ChargeableInsuranceInquirySession, data);
-    //   if(res.result === 'SUCCESS' && res.data.RESULT === 'SUCCESS'){
-    //     return res.data.NTCINSPRMLIST.map((item) => {
-    //       let OUTTEMP: any = {};
-    //       OUTTEMP['회사명'] = item.SAEOPJANGINFO.HOISAMYUNG;
-    //       OUTTEMP['회사주소'] = item.SAEOPJANGINFO.JUSO;
-    //       OUTTEMP['사업자등록번호'] = item.REGNUM;
-    //       OUTTEMP['사업장관리번호'] = item.SAEOPJANGINFO.ADMINNO;
-    //       OUTTEMP['대표자명'] = item.SAEOPJANGINFO.PRENAME;
-    //       OUTTEMP['성명'] = item.GEUNROJAINFO.USERNAME;
-    //       OUTTEMP['근로자생년월일'] = item.GEUNROJAINFO.BIRTHDAY;
-    //       OUTTEMP['근로자구분'] = item.GEUNROJAINFO.GEUNROJAGUBUN;
-    //       OUTTEMP['산재보험 고용일'] = item.GEUNROJAINFO.SJBJAGYEOKCHWIDEUKDT;
-    //       OUTTEMP['산재보험 고용종료일'] = item.GEUNROJAINFO.SJBJAGYEOKSANGSILDT;
-    //       OUTTEMP['산재보험 전근일'] = item.GEUNROJAINFO.SJBJEONGEUNDT;
-    //       OUTTEMP['고용보험 취득일'] = item.GEUNROJAINFO.GYBJAGYEOKCHWIDEUKDT;
-    //       OUTTEMP['고용보험 상실일'] = item.GEUNROJAINFO.GYBJAGYEOKSANGSILDT;
-    //       OUTTEMP['고용보험 전근일'] = item.GEUNROJAINFO.GYBJEONGEUNDT;
-    //       item.GEUNROJANTCINSPRMINFO.GYINFOLIST.map((item2, idx) => {
-    //         OUTTEMP[`${idx+1}-보험월`] = item2.INSMNTHL;
-    //         OUTTEMP[`${idx+1}-(실급)산정보수액`] = item2.SANJENGSGBOSUAK;
-    //         OUTTEMP[`${idx+1}-(고직)산정보수액`] = item2.SANJENGGAJNBOSUAK;
-    //         OUTTEMP[`${idx+1}-월평균보수 고용`] = item2.GYMMAVGBOSUPRC;
-    //         OUTTEMP[`${idx+1}-근무일수`] = item2.GEUNMUILSU;
-    //         OUTTEMP[`${idx+1}-(실급)근로자보험료`] = item2.SGGEUNROJABUDAMBHR;
-    //         OUTTEMP[`${idx+1}-(실급)사업주보험료`] = item2.SGSAEOPJABUDAMBHR;
-    //         OUTTEMP[`${idx+1}-(고직)사업주보험료`] = item2.GAJNBHR;
-    //       })
+      data.BIRTHDAY = this.encrypt(data.BIRTHDAY);
+      // const res = await this.post<ChargeableInsuranceInquirySessionResponse>(endpoints.ChargeableInsuranceInquirySession, data);
+      const res = {
+        "errCode" : "0000",
+        "errMsg" : "success",
+        "result" : "SUCCESS",
+        "data" : {
+          "ETRACK" : "",
+          "ERRMSG" : "",
+          "NTCINSPRMLIST" : [ {
+            "SAEOPJANGINFO" : {
+              "HOISAMYUNG" : "기웅정보통신(주)",
+              "JUSO" : "서울 금천구 가산디지털2로 982 (가산동)",
+              "ADMINNO" : "21481593940",
+              "PRENAME" : "홍길동"
+            },
+            "GEUNROJAINFO" : {
+              "SJBJAGYEOKCHWIDEUKDT" : "20210101",
+              "USERNAME" : "홍길동",
+              "SJBJAGYEOKSANGSILDT" : "",
+              "GEUNROJAGUBUN" : "일반",
+              "SJBJEONGEUNDT" : "",
+              "GYBJEONGEUNDT" : "",
+              "GYBJAGYEOKSANGSILDT" : "",
+              "BIRTHDAY" : "990101",
+              "GYBJAGYEOKCHWIDEUKDT" : "20210101"
+            },
+            "INSYEAR" : "2022",
+            "REGNUM" : "2148159394",
+            "GEUNROJANTCINSPRMINFO" : {
+              "GYINFOLIST" : [ {
+                "GYMMAVGBOSUPRC" : "5000000",
+                "GAJNBHR" : "50000",
+                "SANJENGSGBOSUAK" : "5000000",
+                "INSMNTHL" : "1",
+                "SANJENGGAJNBOSUAK" : "5000000",
+                "SGGEUNROJABUDAMBHR" : "50000",
+                "GEUNMUILSU" : "31",
+                "SGSAEOPJABUDAMBHR" : "50000"
+              }, {
+                "GYMMAVGBOSUPRC" : "5000000",
+                "GAJNBHR" : "50000",
+                "SANJENGSGBOSUAK" : "5000000",
+                "INSMNTHL" : "2",
+                "SANJENGGAJNBOSUAK" : "5000000",
+                "SGGEUNROJABUDAMBHR" : "50000",
+                "GEUNMUILSU" : "28",
+                "SGSAEOPJABUDAMBHR" : "50000"
+              } ]
+            }
+          } ],
+          "ECODE" : "",
+          "ERRDOC" : "",
+          "RESULT" : "SUCCESS"
+        }
+      }
+      if(res.result === 'SUCCESS' && res.data.RESULT === 'SUCCESS'){
+        const items = res.data.NTCINSPRMLIST.map((item) => {
+          let OUTTEMP: any = {};
+          OUTTEMP['회사명'] = item.SAEOPJANGINFO.HOISAMYUNG;
+          OUTTEMP['회사주소'] = item.SAEOPJANGINFO.JUSO;
+          OUTTEMP['사업자등록번호'] = item.REGNUM;
+          OUTTEMP['사업장관리번호'] = item.SAEOPJANGINFO.ADMINNO;
+          OUTTEMP['대표자명'] = item.SAEOPJANGINFO.PRENAME;
+          OUTTEMP['성명'] = item.GEUNROJAINFO.USERNAME;
+          OUTTEMP['근로자생년월일'] = item.GEUNROJAINFO.BIRTHDAY;
+          OUTTEMP['근로자구분'] = item.GEUNROJAINFO.GEUNROJAGUBUN;
+          OUTTEMP['산재보험 고용일'] = item.GEUNROJAINFO.SJBJAGYEOKCHWIDEUKDT;
+          OUTTEMP['산재보험 고용종료일'] = item.GEUNROJAINFO.SJBJAGYEOKSANGSILDT;
+          OUTTEMP['산재보험 전근일'] = item.GEUNROJAINFO.SJBJEONGEUNDT;
+          OUTTEMP['고용보험 취득일'] = item.GEUNROJAINFO.GYBJAGYEOKCHWIDEUKDT;
+          OUTTEMP['고용보험 상실일'] = item.GEUNROJAINFO.GYBJAGYEOKSANGSILDT;
+          OUTTEMP['고용보험 전근일'] = item.GEUNROJAINFO.GYBJEONGEUNDT;
+          item.GEUNROJANTCINSPRMINFO.GYINFOLIST.map((item2, idx) => {
+            OUTTEMP[`${idx+1}-보험월`] = item2.INSMNTHL;
+            OUTTEMP[`${idx+1}-(실급)산정보수액`] = item2.SANJENGSGBOSUAK;
+            OUTTEMP[`${idx+1}-(고직)산정보수액`] = item2.SANJENGGAJNBOSUAK;
+            OUTTEMP[`${idx+1}-월평균보수 고용`] = item2.GYMMAVGBOSUPRC;
+            OUTTEMP[`${idx+1}-근무일수`] = item2.GEUNMUILSU;
+            OUTTEMP[`${idx+1}-(실급)근로자보험료`] = item2.SGGEUNROJABUDAMBHR;
+            OUTTEMP[`${idx+1}-(실급)사업주보험료`] = item2.SGSAEOPJABUDAMBHR;
+            OUTTEMP[`${idx+1}-(고직)사업주보험료`] = item2.GAJNBHR;
+          })
 
-    //       // OUTTEMP TO BASE64 EXCEL FILE
-    //       let wb = XLSX.utils.book_new();
-    //       let ws = XLSX.utils.json_to_sheet([OUTTEMP]);
-    //       XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    //       let buf = XLSX.write(wb, {bookType: 'xlsx', type: 'buffer'});
-    //       let base64Encoded = buf.toString('base64');
+          // OUTTEMP TO BASE64 EXCEL FILE
+          let wb = XLSX.utils.book_new();
+          let ws = XLSX.utils.json_to_sheet([OUTTEMP]);
+          XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+          let buf = XLSX.write(wb, {bookType: 'xlsx', type: 'buffer'});
+          let base64Encoded = buf.toString('base64');
 
-    //       return {
-    //         OUTTYPE: 'EXCEL',
-    //         OUTDATA: base64Encoded
-    //       }
-    //     })
-    //   }
-    //   return [];
-    // }
+          return {
+            OUTTYPE: 'EXCEL',
+            OUTDATA: base64Encoded
+          }
+        })
+        return {
+          ...res,
+          ...items
+        }
+      }
+      return [];
+    }
 
     public async kcomwelSearchAdminno(
       INSUGUBUN: string,
