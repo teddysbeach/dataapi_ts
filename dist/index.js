@@ -41,9 +41,6 @@ const endpoints_1 = __importDefault(require("./util/endpoints"));
 const branches_1 = __importDefault(require("./util/branches"));
 const XLSX = __importStar(require("xlsx"));
 class DatahubAgent {
-    get isSessionHometaxCreated() { return this._sessionHometax !== undefined; }
-    get isSessionKcomwelCreated() { return this._sessionKcomwel !== undefined; }
-    get allBranches() { return branches_1.default; }
     constructor(isTest, token, key, iv) {
         this.encrypt = (data) => this._crypto.encrypt(data);
         const baseURL = isTest ? 'https://datahub-dev.scraping.co.kr' : 'https://api.mydatahub.co.kr';
@@ -51,6 +48,9 @@ class DatahubAgent {
         this._crypto = new crypto_1.DataAPICrypto(key, iv);
         this._axiosInstance = axios_1.default.create({ baseURL: baseURL, headers: { 'Content-Type': 'application/json' } });
     }
+    get isSessionHometaxCreated() { return this._sessionHometax !== undefined; }
+    get isSessionKcomwelCreated() { return this._sessionKcomwel !== undefined; }
+    get allBranches() { return branches_1.default; }
     /** LOGIN API **/
     /**
      * 간편인증 로그인 세션 [hometax/LoginSessionSimple]
@@ -162,26 +162,32 @@ class DatahubAgent {
     }
     /**
      * 공동인증서 근로고용복지공단 로그인 세션 [kcomwel/LoginSession]
-     * 확실하지 않고 테스트가 필요함 데이터허브측에 문의해서 존재하는 API인지 확인 필요
-     * [2023-05-30]
-     * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인사업자, 4: 세무사
+     * @param USERGUBUN 사용자구분, 3: 사업장, 4: 사무대행
+     * @param SUBCUSKIND 세부고객유형, 0: 대표자/소속직원, 2: 사업장명의인증서
+     * @param REGNUMBER 사업자등록번호
      * @param P_CERTNAME 인증서명
      * @param P_CERTPWD 인증서비밀번호
      * @param P_SIGNCERT_DER 인증서DER (BASE64)
      * @param P_SIGNPRI_KEY 인증서개인키 (BASE64)
      */
-    kcomwelLoginSession(USERGUBUN, // 1: 개인, 2: 개인사업자,  3:법인, 4:세무사
-    P_CERTNAME, P_CERTPWD, P_SIGNCERT_DER, P_SIGNPRI_KEY) {
+    kcomwelLoginSession(USERGUBUN, // 사용자구분, 3: 사업장, 4: 사무대행
+    SUBCUSKIND, // 세부고객유형, 0: 대표자/소속직원, 2: 사업장명의인증서
+    REGNUMBER, P_CERTNAME, P_CERTPWD, P_SIGNCERT_DER, P_SIGNPRI_KEY) {
         return __awaiter(this, void 0, void 0, function* () {
             const data = {
                 USERGUBUN,
+                SUBCUSKIND,
+                REGNUMBER,
                 P_CERTNAME,
                 P_CERTPWD,
                 P_SIGNCERT_DER,
                 P_SIGNPRI_KEY,
             };
-            data.P_CERTPWD = this.encrypt(data.P_CERTPWD);
+            // data.P_CERTPWD = this.encrypt(data.P_CERTPWD);
+            data.REGNUMBER = this.encrypt(data.REGNUMBER);
+            console.log(data);
             const res = yield this.post(endpoints_1.default.LoginSessionKcomwel, data);
+            console.log(res);
             this._sessionKcomwel = res.data;
             console.log('[ * ] Kcomwel Login Session has been created. [인증서]');
             return res;

@@ -166,7 +166,9 @@ export default class DatahubAgent {
     }
     /**
      * 공동인증서 근로고용복지공단 로그인 세션 [kcomwel/LoginSession] 
-     * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인사업자, 4: 세무사
+     * @param USERGUBUN 사용자구분, 3: 사업장, 4: 사무대행
+     * @param SUBCUSKIND 세부고객유형, 0: 대표자/소속직원, 2: 사업장명의인증서
+     * @param REGNUMBER 사업자등록번호
      * @param P_CERTNAME 인증서명
      * @param P_CERTPWD 인증서비밀번호
      * @param P_SIGNCERT_DER 인증서DER (BASE64)
@@ -191,7 +193,7 @@ export default class DatahubAgent {
         P_SIGNPRI_KEY,
       }
 
-      data.P_CERTPWD = this.encrypt(data.P_CERTPWD);
+      // data.P_CERTPWD = this.encrypt(data.P_CERTPWD); // 활성화
       data.REGNUMBER = this.encrypt(data.REGNUMBER);
       const res = await this.post<LoginSessionKcomwelResponse>(endpoints.LoginSessionKcomwel, data);
       this._sessionKcomwel = res.data;
