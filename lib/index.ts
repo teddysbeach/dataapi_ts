@@ -166,8 +166,6 @@ export default class DatahubAgent {
     }
     /**
      * 공동인증서 근로고용복지공단 로그인 세션 [kcomwel/LoginSession] 
-     * 확실하지 않고 테스트가 필요함 데이터허브측에 문의해서 존재하는 API인지 확인 필요
-     * [2023-05-30]
      * @param USERGUBUN 사용자구분, 1: 개인, 2: 개인사업자, 3: 법인사업자, 4: 세무사
      * @param P_CERTNAME 인증서명
      * @param P_CERTPWD 인증서비밀번호
@@ -175,7 +173,9 @@ export default class DatahubAgent {
      * @param P_SIGNPRI_KEY 인증서개인키 (BASE64)
      */
     public async kcomwelLoginSession(
-      USERGUBUN: string, // 1: 개인, 2: 개인사업자,  3:법인, 4:세무사
+      USERGUBUN: string, // 사용자구분, 3: 사업장, 4: 사무대행
+      SUBCUSKIND: string, // 세부고객유형, 0: 대표자/소속직원, 2: 사업장명의인증서
+      REGNUMBER: string,
       P_CERTNAME: string,
       P_CERTPWD: string,
       P_SIGNCERT_DER: string,
@@ -183,6 +183,8 @@ export default class DatahubAgent {
     ): Promise<LoginSessionKcomwelResponse> {
       const data = {
         USERGUBUN,
+        SUBCUSKIND,
+        REGNUMBER,
         P_CERTNAME,
         P_CERTPWD,
         P_SIGNCERT_DER,
@@ -190,6 +192,7 @@ export default class DatahubAgent {
       }
 
       data.P_CERTPWD = this.encrypt(data.P_CERTPWD);
+      data.REGNUMBER = this.encrypt(data.REGNUMBER);
       const res = await this.post<LoginSessionKcomwelResponse>(endpoints.LoginSessionKcomwel, data);
       this._sessionKcomwel = res.data;
       console.log('[ * ] Kcomwel Login Session has been created. [인증서]');
