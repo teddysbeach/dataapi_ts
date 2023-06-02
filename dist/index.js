@@ -12,6 +12,9 @@ import { DataAPICrypto } from './util/crypto';
 import endpoints from './util/endpoints';
 import BRANCHES from './util/branches';
 export default class DatahubAgent {
+    get isSessionHometaxCreated() { return this._sessionHometax !== undefined; }
+    get isSessionKcomwelCreated() { return this._sessionKcomwel !== undefined; }
+    get allBranches() { return BRANCHES; }
     constructor(isTest, token, key, iv) {
         this.encrypt = (data) => this._crypto.encrypt(data);
         const baseURL = isTest ? 'https://datahub-dev.scraping.co.kr' : 'https://api.mydatahub.co.kr';
@@ -19,9 +22,6 @@ export default class DatahubAgent {
         this._crypto = new DataAPICrypto(key, iv);
         this._axiosInstance = axios.create({ baseURL: baseURL, headers: { 'Content-Type': 'application/json' } });
     }
-    get isSessionHometaxCreated() { return this._sessionHometax !== undefined; }
-    get isSessionKcomwelCreated() { return this._sessionKcomwel !== undefined; }
-    get allBranches() { return BRANCHES; }
     /** LOGIN API **/
     /**
      * 간편인증 로그인 세션 [hometax/LoginSessionSimple]

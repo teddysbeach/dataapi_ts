@@ -1,6 +1,6 @@
 {
   "name": "dataapi_ts",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "데이터허브 API 연동을 위한 라이브러리",
   "homepage": "http://floatfactory.kr",
   "main": "dist/index.js",
@@ -26,9 +26,9 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@types/node": "^20.2.5",
+    "@types/node": "^18.11.9",
     "axios": "^1.4.0",
     "crypto": "^1.0.1",
-    "node": "^20.2.0"
+    "node": "16.20.0"
   }
 }
