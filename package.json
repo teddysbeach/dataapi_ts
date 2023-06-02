@@ -26,6 +26,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "@types/axios": "^0.14.0",
     "@types/node": "^18.11.9",
     "axios": "^1.4.0",
     "crypto": "^1.0.1",
