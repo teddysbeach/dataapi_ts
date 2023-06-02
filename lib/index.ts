@@ -192,7 +192,7 @@ export default class DatahubAgent {
         P_SIGNPRI_KEY,
       }
 
-      // data.P_CERTPWD = this.encrypt(data.P_CERTPWD); // 활성화
+      data.P_CERTPWD = this.encrypt(data.P_CERTPWD); // 활성화
       data.REGNUMBER = this.encrypt(data.REGNUMBER);
       const res = await this.post<LoginSessionKcomwelResponse>(endpoints.LoginSessionKcomwel, data);
       this._sessionKcomwel = res.data;
